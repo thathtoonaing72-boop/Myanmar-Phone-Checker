@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Myanmar Phone Checker</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#172033;--muted:#687386;--line:#dce1eb;--blue:#2864e8;--green:#16834c;--red:#c43d4b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif;padding:16px}
+.container{max-width:760px;margin:22px auto}.header{text-align:center;margin-bottom:22px}.logo{font-size:42px}h1{font-size:25px;margin:8px 0}.sub{color:var(--muted);font-size:13px}
+.card{background:var(--card);padding:20px;border-radius:16px;box-shadow:0 5px 25px #17203310;margin-bottom:16px}
+label{display:block;font-weight:bold;margin:13px 0 7px}input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:15px}
+button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-size:15px;font-weight:bold;cursor:pointer}.secondary{background:#eaf0ff;color:#2455bc}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.actions{display:flex;gap:10px;margin-top:16px}.actions button{flex:1}
+.brands{display:flex;flex-wrap:wrap;gap:8px}.brand,.tag{background:#edf2ff;padding:7px 10px;border-radius:8px;font-size:13px;color:#2455bc}
+.result{display:none;line-height:1.7}.device{border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}.rowline{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #edf0f5;padding:7px 0}.ok{color:var(--green);font-weight:bold}.bad{color:var(--red);font-weight:bold}.note{font-size:12px;color:#778196;line-height:1.7}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.card{padding:16px}.actions{flex-direction:column}}
+</style></head>
+<body><div class="container">
+<header class="header"><div class="logo">📱</div><h1>MYANMAR PHONE CHECKER</h1><div class="sub">ONLINE TAC DATABASE · DUAL IMEI CHECKER</div></header>
+<section class="card"><h3>IMEI Information Checker</h3><div class="grid">
+<div><label for="imei1">IMEI 1</label><input id="imei1" inputmode="numeric" maxlength="15" placeholder="15-digit IMEI 1"></div>
+<div><label for="imei2">IMEI 2 (Optional)</label><input id="imei2" inputmode="numeric" maxlength="15" placeholder="15-digit IMEI 2"></div></div>
+<div class="actions"><button id="checkBtn">CHECK NOW</button><button id="clearBtn" class="secondary">CLEAR</button></div>
+<p class="note">IMEI ကို ကိုယ်ပိုင် သို့မဟုတ် ခွင့်ပြုချက်ရှိသော စက်ပစ္စည်းအတွက်သာ စစ်ဆေးပါ။ ဒီ website က IMEI အပြည့်အစုံကို server သို့ မပို့ဘဲ TAC 8 လုံးကိုသာ lookup လုပ်သည်။</p></section>
+<section class="card"><b>Supported brands</b><div class="brands" style="margin-top:12px"><span class="brand">Apple</span><span class="brand">Redmi</span><span class="brand">Xiaomi</span><span class="brand">POCO</span><span class="brand">Vivo</span><span class="brand">OPPO</span><span class="brand">Huawei</span><span class="brand">Realme</span></div></section>
+<section class="card result" id="result" aria-live="polite"><h3>IMEI Check Result</h3><div id="output"></div></section>
+<section class="card"><h3>Verification status</h3><p class="note">TAC lookup သည် Brand/Model ကိုသာ ခန့်မှန်းဖော်ပြနိုင်သည်။ Apple Activation Lock၊ Mi Account၊ Vivo/OPPO/Huawei/Realme account lock နှင့် CEIR blacklist/registration status တို့ကို IMEI တစ်ခုတည်းဖြင့် မအတည်ပြုနိုင်ပါ။ တရားဝင် API သို့မဟုတ် ခွင့်ပြုထားသော portal လိုအပ်သည်။</p>
+<div class="rowline"><span>Myanmar CEIR</span><a href="https://www.ceir.gov.mm/" target="_blank" rel="noopener">Official portal</a></div>
+<div class="rowline"><span>Apple Support</span><a href="https://support.apple.com/" target="_blank" rel="noopener">Official support</a></div>
+<div class="rowline"><span>Xiaomi Support</span><a href="https://www.mi.com/global/support/" target="_blank" rel="noopener">Official support</a></div>
+<div class="rowline"><span>Vivo Support</span><a href="https://www.vivo.com/en/support" target="_blank" rel="noopener">Official support</a></div>
+<div class="rowline"><span>OPPO Support</span><a href="https://support.oppo.com/" target="_blank" rel="noopener">Official support</a></div>
+<div class="rowline"><span>Huawei Support</span><a href="https://consumer.huawei.com/en/support/" target="_blank" rel="noopener">Official support</a></div>
+<div class="rowline"><span>realme Support</span><a href="https://www.realme.com/global/support" target="_blank" rel="noopener">Official support</a></div></section>
+<section class="card"><b>Database status</b><p id="apiStatus" class="note">Server status စစ်ဆေးနေသည်...</p><p class="note">Privacy: IMEI အပြည့်အစုံကို server သို့ မပို့ပါ။ TAC 8 လုံးသာ lookup request အဖြစ် ပို့သည်။</p></section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function validIMEI(v){if(!/^\d{15}$/.test(v))return false;let s=0;for(let i=0;i<15;i++){let n=+v[i];if(i%2===1){n*=2;if(n>9)n-=9;}s+=n;}return s%10===0;}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function lookup(tac){const r=await fetch(`/api/tac/${encodeURIComponent(tac)}`);if(!r.ok)throw new Error('API lookup failed');return r.json();}
+async function deviceCard(v,i){
+ const ok=validIMEI(v), tac=/^\d{15}$/.test(v)?v.slice(0,8):'';
+ let data=null,err='';
+ if(tac&&ok){try{const x=await lookup(tac);if(x.found)data=x.record;}catch(e){err='Server ချိတ်ဆက်မရပါ';}}
+ return `<div class="device"><h4>IMEI ${i+1}</h4>
+ <div class="rowline"><span>IMEI</span><b>${esc(v)}</b></div>
+ <div class="rowline"><span>Checksum</span><span class="${ok?'ok':'bad'}">${ok?'✓ Valid':'✗ Invalid'}</span></div>
+ <div class="rowline"><span>TAC</span><b>${tac||'မမှန်ပါ'}</b></div>
+ <div class="rowline"><span>Brand</span><b>${data?esc(data.brand):err||'Database မတွေ့ပါ'}</b></div>
+ <div class="rowline"><span>Model</span><b>${data?esc(data.model):'TAC database ထဲတွင် မရှိသေးပါ'}</b></div>
+ <div class="rowline"><span>Data source</span><span>${data?esc(data.source||'Not specified'):'မရရှိသေးပါ'}</span></div>
+ <div class="rowline"><span>Verification</span><span class="tag">${data&&data.verified?'Verified':'Unverified / မစစ်ဆေးရသေး'}</span></div>
+ <div class="rowline"><span>CEIR / Account</span><span class="tag">Official verification လိုအပ်</span></div></div>`;
+}
+$('checkBtn').addEventListener('click',async()=>{
+ const a=$('imei1').value.trim(),b=$('imei2').value.trim();
+ if(!a&&!b){alert('IMEI တစ်ခု အနည်းဆုံး ထည့်ပါ');return;}
+ $('checkBtn').disabled=true;$('output').textContent='စစ်ဆေးနေသည်...';$('result').style.display='block';
+ try{$('output').innerHTML=(await Promise.all([a?deviceCard(a,0):'',b?deviceCard(b,1):''])).join('');}
+ finally{$('checkBtn').disabled=false;}
+});
+$('clearBtn').addEventListener('click',()=>{$('imei1').value='';$('imei2').value='';$('output').innerHTML='';$('result').style.display='none';});
+fetch('/api/health').then(r=>r.json()).then(d=>$('apiStatus').textContent=`Online API connected · TAC records: ${d.records}`).catch(()=>$('apiStatus').textContent='API မချိတ်ဆက်နိုင်ပါ။ Backend ကို deploy လုပ်ထားကြောင်း စစ်ဆေးပါ။');
+</script></body></html>
