@@ -93,14 +93,78 @@ app.post("/api/admin/logout", requireSameOrigin, (req, res) => {
 app.get("/api/admin/me", (req, res) => {
   res.json({ isAdmin: req.session?.isAdmin === true });
 });
+// Website Visitor Tracking
+app.post("/api/stats/visit", async (req, res) => {
+  try {
+    const visitorId = req.body?.visitorId;
+
+    if (
+      typeof visitorId !== "string" ||
+      !/^[a-zA-Z0-9-]{10,64}$/.test(visitorId)
+    ) {
+      return res.status(400).json({ ok: false });
+    }
+
+    await pool.query(
+      `INSERT INTO site_stats (event_type, visitor_id)
+       SELECT 'visitor', $1
+       WHERE NOT EXISTS (
+         SELECT 1 FROM site_stats
+         WHERE event_type = 'visitor'
+         AND visitor_id = $1
+       )`,
+      [visitorId]
+    );
+
+    res.json({ ok: true });
+  } catch {
+    res.status(503).json({ ok: false });
+  }
+});
 app.get("/api/health", async (_req, res) => {
   try { const q = await pool.query("SELECT COUNT(*)::int AS count FROM tac_records"); res.json({ ok: true, records: q.rows[0].count }); }
   catch { res.status(503).json({ ok: false, error: "Database unavailable" }); }
+});
+// Website Statistics API
+app.get("/api/stats", async (_req, res) => {
+  try {
+    const q = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE event_type = 'imei_check')::int AS total_checks,
+        COUNT(*) FILTER (
+          WHERE event_type = 'imei_check'
+          AND created_at >= CURRENT_DATE
+        )::int AS today_checks,
+        COUNT(DISTINCT visitor_id) FILTER (
+          WHERE event_type = 'visitor'
+        )::int AS total_visitors
+      FROM site_stats
+    `);
+
+    const records = await pool.query(
+      "SELECT COUNT(*)::int AS count FROM tac_records"
+    );
+
+    res.json({
+      ok: true,
+      records: records.rows[0].count,
+      totalChecks: q.rows[0].total_checks,
+      todayChecks: q.rows[0].today_checks,
+      totalVisitors: q.rows[0].total_visitors
+    });
+  } catch (err) {
+    console.error("Statistics error:", err);
+    res.status(503).json({ ok: false, error: "Statistics unavailable" });
+  }
 });
 app.get("/api/tac/:tac", async (req, res) => {
   const tac = req.params.tac;
   if (!/^\d{8}$/.test(tac)) return res.status(400).json({ found: false, error: "TAC must be exactly 8 digits" });
   try {
+	      await pool.query(
+      "INSERT INTO site_stats (event_type) VALUES ($1)",
+      ["imei_check"]
+    );
     const q = await pool.query("SELECT tac, brand, model, device_type, source, verified FROM tac_records WHERE tac=$1 LIMIT 1", [tac]);
     if (!q.rowCount) return res.json({ found: false });
     const r = q.rows[0]; res.json({ found: true, record: { ...r, tac: String(r.tac) } });

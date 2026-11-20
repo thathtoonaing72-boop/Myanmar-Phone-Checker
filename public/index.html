@@ -161,6 +161,28 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 <div class="rowline"><span>OPPO Support</span><a href="https://support.oppo.com/" target="_blank" rel="noopener">Official support</a></div>
 <div class="rowline"><span>Huawei Support</span><a href="https://consumer.huawei.com/en/support/" target="_blank" rel="noopener">Official support</a></div>
 <div class="rowline"><span>realme Support</span><a href="https://www.realme.com/global/support" target="_blank" rel="noopener">Official support</a></div></section>
+
+<section class="card" id="statistics">
+  <h3>Website Statistics</h3>
+  <div class="checker-grid">
+    <div class="device">
+      <h4>Database Records</h4>
+      <strong id="statRecords">Loading...</strong>
+    </div>
+    <div class="device">
+      <h4>Total IMEI Checks</h4>
+      <strong id="statChecks">Loading...</strong>
+    </div>
+    <div class="device">
+      <h4>Today's Checks</h4>
+      <strong id="statToday">Loading...</strong>
+    </div>
+    <div class="device">
+      <h4>Website Visitors</h4>
+      <strong id="statVisitors">Loading...</strong>
+    </div>
+  </div>
+</section>
 <section class="card"><b>Database status</b><p id="apiStatus" class="note">Server status စစ်ဆေးနေသည်...</p><p class="note">Privacy: IMEI အပြည့်အစုံကို server သို့ မပို့ပါ။ TAC 8 လုံးသာ lookup request အဖြစ် ပို့သည်။</p></section>
 </div>
 <script>
@@ -318,11 +340,40 @@ $('clearBtn').addEventListener('click',()=>{
  $('output').innerHTML='';
  $('result').style.display='none';
 });
+// Website Visitor Tracking
+let visitorId = localStorage.getItem('mpc_visitor_id');
 
+if (!visitorId) {
+  visitorId = crypto.randomUUID();
+  localStorage.setItem('mpc_visitor_id', visitorId);
+}
+
+fetch('/api/stats/visit', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ visitorId })
+}).catch(() => {});
 fetch('/api/health')
  .then(r=>r.json())
  .then(d=>$('apiStatus').textContent=`Online API connected · TAC records: ${d.records}`)
  .catch(()=>$('apiStatus').textContent='API မချိတ်ဆက်နိုင်ပါ။ Backend ကို deploy လုပ်ထားကြောင်း စစ်ဆေးပါ။');
+// Load Website Statistics
+fetch('/api/stats')
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) return;
+
+    $('statRecords').textContent = d.records.toLocaleString();
+    $('statChecks').textContent = d.totalChecks.toLocaleString();
+    $('statToday').textContent = d.todayChecks.toLocaleString();
+    $('statVisitors').textContent = d.totalVisitors.toLocaleString();
+  })
+  .catch(() => {
+    ['statRecords', 'statChecks', 'statToday', 'statVisitors']
+      .forEach(id => $(id).textContent = 'Unavailable');
+  });
  </script>
 </body>
 </html>
