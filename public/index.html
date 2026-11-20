@@ -235,6 +235,14 @@ body.dark-mode .site-footer {
       <strong id="statVisitors">Loading...</strong>
     </div>
   </div>
+  <section class="card" id="checkHistory">
+  <h3>IMEI Check History</h3>
+  <div id="historyList">
+    <p class="note">No check history yet.</p>
+  </div>
+  <button type="button" id="clearHistory">
+    Clear History
+  </button>
 </section>
 <section class="card"><b>Database status</b><p id="apiStatus" class="note">Server status စစ်ဆေးနေသည်...</p><p class="note">Privacy: IMEI အပြည့်အစုံကို server သို့ မပို့ပါ။ TAC 8 လုံးသာ lookup request အဖြစ် ပို့သည်။</p></section>
 </div>
@@ -243,10 +251,75 @@ const $=id=>document.getElementById(id);
 function validIMEI(v){if(!/^\d{15}$/.test(v))return false;let s=0;for(let i=0;i<15;i++){let n=+v[i];if(i%2===1){n*=2;if(n>9)n-=9;}s+=n;}return s%10===0;}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function lookup(tac){const r=await fetch(`/api/tac/${encodeURIComponent(tac)}`);if(!r.ok)throw new Error('API lookup failed');return r.json();}
+// Display IMEI Check History
+function renderHistory() {
+  const box = document.getElementById('historyList');
+  if (!box) return;
+
+  let history = [];
+
+  try {
+    history = JSON.parse(
+      localStorage.getItem('mpc_history') || '[]'
+    );
+  } catch (e) {}
+
+  if (!history.length) {
+    box.innerHTML = '<p class="note">No check history yet.</p>';
+    return;
+  }
+
+  box.innerHTML = history.map(item => `
+    <div class="device">
+      <div class="rowline">
+        <b>${esc(item.imei || '')}</b>
+        <span class="${item.valid ? 'ok' : 'bad'}">
+          ${item.valid ? 'Valid' : 'Invalid'}
+        </span>
+      </div>
+      <div class="rowline">
+        <span>Brand / Model</span>
+        <b>${esc(item.brand || 'Unknown')} / ${esc(item.model || 'Unknown')}</b>
+      </div>
+      <div class="rowline">
+        <span>Date</span>
+        <span>${esc(item.date || '')}</span>
+      </div>
+    </div>
+  `).join('');
+}
+// Clear IMEI Check History
+document.getElementById('clearHistory')?.addEventListener('click', () => {
+  localStorage.removeItem('mpc_history');
+  renderHistory();
+});
+
+// Load saved history
+renderHistory();
 async function deviceCard(v,i){
  const ok=validIMEI(v), tac=/^\d{15}$/.test(v)?v.slice(0,8):'';
  let data=null,err='';
  if(tac&&ok){try{const x=await lookup(tac);if(x.found)data=x.record;}catch(e){err='Server ချိတ်ဆက်မရပါ';}}
+ // Save IMEI Check History (masked IMEI only)
+try {
+  const history = JSON.parse(
+    localStorage.getItem('mpc_history') || '[]'
+  );
+
+  history.unshift({
+    imei: '•••••••••••' + String(v).slice(-4),
+    valid: ok,
+    brand: data?.brand || 'Unknown',
+    model: data?.model || 'Unknown',
+    date: new Date().toLocaleString()
+  });
+
+  localStorage.setItem(
+    'mpc_history',
+    JSON.stringify(history.slice(0, 20))
+  );
+  renderHistory();
+} catch (e) {}
  return `<div class="device"><h4>IMEI ${i+1}</h4>
  <div class="rowline"><span>IMEI</span><b>${esc(v)}</b></div>
  <div class="rowline"><span>Checksum</span><span class="${ok?'ok':'bad'}">${ok?'✓ Valid':'✗ Invalid'}</span></div>
