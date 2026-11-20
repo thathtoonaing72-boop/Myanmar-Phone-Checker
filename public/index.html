@@ -14,6 +14,48 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 .brands{display:flex;flex-wrap:wrap;gap:8px}.brand,.tag{background:#edf2ff;padding:7px 10px;border-radius:8px;font-size:13px;color:#2455bc}
 .result{display:none;line-height:1.7}.device{border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}.rowline{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #edf0f5;padding:7px 0}.ok{color:var(--green);font-weight:bold}.bad{color:var(--red);font-weight:bold}.note{font-size:12px;color:#778196;line-height:1.7}
 @media(max-width:560px){.grid{grid-template-columns:1fr}.card{padding:16px}.actions{flex-direction:column}}
+
+.checker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.checker-link {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px;
+  border: 1px solid #dce1eb;
+  border-radius: 14px;
+  background: #fff;
+  color: #172033;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.checker-link:hover {
+  border-color: #2864e8;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 16px rgba(0,0,0,0.08);
+}
+
+.checker-logo {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #2864e8;
+}
+
+.checker-link strong {
+  font-size: 16px;
+}
+
+.checker-link span {
+  font-size: 13px;
+  color: #687386;
+}
 </style></head>
 <body><div class="container">
 <header class="header"><div class="logo">📱</div><h1>MYANMAR PHONE CHECKER</h1><div class="sub">ONLINE TAC DATABASE · DUAL IMEI CHECKER</div></header>
@@ -24,12 +66,40 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 <p class="note">IMEI ကို ကိုယ်ပိုင် သို့မဟုတ် ခွင့်ပြုချက်ရှိသော စက်ပစ္စည်းအတွက်သာ စစ်ဆေးပါ။ ဒီ website က IMEI အပြည့်အစုံကို server သို့ မပို့ဘဲ TAC 8 လုံးကိုသာ lookup လုပ်သည်။</p></section>
 <section class="card"><b>Supported brands</b><div class="brands" style="margin-top:12px"><span class="brand">Apple</span><span class="brand">Redmi</span><span class="brand">Xiaomi</span><span class="brand">POCO</span><span class="brand">Vivo</span><span class="brand">OPPO</span><span class="brand">Huawei</span><span class="brand">Realme</span></div></section>
 <section class="card result" id="result" aria-live="polite"><h3>IMEI Check Result</h3><div id="output"></div></section>
-<section class="card result" id="accountLockResult">
-  <h3>Account Lock Status</h3>
-  <div id="accountLockOutput">
-    <p>Account Lock: Not Checked</p>
+
+<section class="card result" id="externalCheckers">
+  <h3>Official & External IMEI Checkers</h3>
+  <p>အောက်ပါ Website များတွင် IMEI ကို ဆက်လက်စစ်ဆေးနိုင်ပါသည်။</p>
+
+  <div class="checker-grid">
+
+    <a class="checker-link"
+       href="https://iunlocker.com/check_imei_xiaomi"
+       target="_blank" rel="noopener noreferrer">
+      <div class="checker-logo">iUnlocker</div>
+      <strong>Xiaomi IMEI Check</strong>
+      <span>Check Xiaomi Device</span>
+    </a>
+
+    <a class="checker-link"
+       href="https://imeicheck.com/icloud-check"
+       target="_blank" rel="noopener noreferrer">
+      <div class="checker-logo">IMEIcheck</div>
+      <strong>iCloud Check</strong>
+      <span>Check iCloud Status</span>
+    </a>
+
+    <a class="checker-link"
+       href="https://www.ceir.gov.mm/"
+       target="_blank" rel="noopener noreferrer">
+      <div class="checker-logo">CEIR</div>
+      <strong>Myanmar CEIR</strong>
+      <span>Check Myanmar IMEI Status</span>
+    </a>
+
   </div>
 </section>
+
 <section class="card"><h3>Verification status</h3><p class="note">TAC lookup သည် Brand/Model ကိုသာ ခန့်မှန်းဖော်ပြနိုင်သည်။ Apple Activation Lock၊ Mi Account၊ Vivo/OPPO/Huawei/Realme account lock နှင့် CEIR blacklist/registration status တို့ကို IMEI တစ်ခုတည်းဖြင့် မအတည်ပြုနိုင်ပါ။ တရားဝင် API သို့မဟုတ် ခွင့်ပြုထားသော portal လိုအပ်သည်။</p>
 <div class="rowline"><span>Myanmar CEIR</span><a href="https://www.ceir.gov.mm/" target="_blank" rel="noopener">Official portal</a></div>
 <div class="rowline"><span>Apple Support</span><a href="https://support.apple.com/" target="_blank" rel="noopener">Official support</a></div>
