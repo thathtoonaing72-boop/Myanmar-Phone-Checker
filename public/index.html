@@ -59,13 +59,53 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 </style></head>
 <body><div class="container">
 <header class="header"><div class="logo">📱</div><h1>MYANMAR PHONE CHECKER</h1><div class="sub">ONLINE TAC DATABASE · DUAL IMEI CHECKER</div></header>
-<section class="card"><h3>IMEI Information Checker</h3><div class="grid">
-<div><label for="imei1">IMEI 1</label><input id="imei1" inputmode="numeric" maxlength="15" placeholder="15-digit IMEI 1"></div>
-<div><label for="imei2">IMEI 2 (Optional)</label><input id="imei2" inputmode="numeric" maxlength="15" placeholder="15-digit IMEI 2"></div></div>
-<div class="actions"><button id="checkBtn">CHECK NOW</button><button id="clearBtn" class="secondary">CLEAR</button></div>
-<p class="note">IMEI ကို ကိုယ်ပိုင် သို့မဟုတ် ခွင့်ပြုချက်ရှိသော စက်ပစ္စည်းအတွက်သာ စစ်ဆေးပါ။ ဒီ website က IMEI အပြည့်အစုံကို server သို့ မပို့ဘဲ TAC 8 လုံးကိုသာ lookup လုပ်သည်။</p></section>
-<section class="card"><b>Supported brands</b><div class="brands" style="margin-top:12px"><span class="brand">Apple</span><span class="brand">Redmi</span><span class="brand">Xiaomi</span><span class="brand">POCO</span><span class="brand">Vivo</span><span class="brand">OPPO</span><span class="brand">Huawei</span><span class="brand">Realme</span></div></section>
-<section class="card result" id="result" aria-live="polite"><h3>IMEI Check Result</h3><div id="output"></div></section>
+
+<section class="card">
+  <h3>IMEI Information Checker</h3>
+
+  <div class="grid">
+    <div>
+      <label for="imei1">IMEI 1</label>
+      <input id="imei1" inputmode="numeric"
+        maxlength="15" placeholder="15-digit IMEI 1">
+      <button type="button" id="scanImei1" class="secondary">
+        📷 Scan IMEI 1
+      </button>
+    </div>
+
+    <div>
+      <label for="imei2">IMEI 2 (Optional)</label>
+      <input id="imei2" inputmode="numeric"
+        maxlength="15" placeholder="15-digit IMEI 2">
+      <button type="button" id="scanImei2" class="secondary">
+        📷 Scan IMEI 2
+      </button>
+    </div>
+  </div>
+
+  <div id="barcodeScanner" style="display:none;margin-top:15px">
+    <video id="barcodeVideo" autoplay playsinline
+      style="width:100%;max-width:500px;border-radius:12px">
+    </video>
+    <p id="scanMessage">Barcode ကို Camera ရှေ့မှာ ချိန်ပါ။</p>
+    <button type="button" id="stopScanner" class="secondary">
+      Stop Camera
+    </button>
+  </div>
+
+  <div class="actions">
+    <button id="checkBtn">CHECK NOW</button>
+    <button id="clearBtn" class="secondary">CLEAR</button>
+  </div>
+
+  <p class="note">
+    IMEI ကို ကိုယ်ပိုင် သို့မဟုတ် ခွင့်ပြုချက်ရှိသော
+    စက်ပစ္စည်းအတွက်သာ စစ်ဆေးပါ။
+    ဒီ website က IMEI အပြည့်အစုံကို server သို့ မပို့ဘဲ
+    TAC 8 လုံးကိုသာ lookup လုပ်သည်။
+  </p>
+</section>
+
 
 <section class="card" id="externalCheckers">
   <h3>Official & External IMEI Checkers</h3>
@@ -149,6 +189,96 @@ async function loadAccountLock(){
     box.textContent = 'Account Lock API ချိတ်ဆက်မရပါ';
   }
 }
+
+const scannerState = {
+  stream: null,
+  active: false,
+  target: null,
+  detector: null
+};
+
+async function startBarcodeScanner(targetId) {
+  try {
+    if (!('BarcodeDetector' in window)) {
+      alert('ဒီ Browser မှာ Barcode Scanner မထောက်ပံ့သေးပါ။ Chrome အသစ်ကို အသုံးပြုပါ။');
+      return;
+    }
+
+    stopBarcodeScanner();
+
+    scannerState.target = $(targetId);
+    scannerState.detector = new BarcodeDetector({
+      formats: ['qr_code', 'code_128', 'ean_13', 'ean_8', 'itf', 'data_matrix', 'pdf417']
+    });
+
+    scannerState.stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' },
+      audio: false
+    });
+
+    const video = $('barcodeVideo');
+    video.srcObject = scannerState.stream;
+    $('barcodeScanner').style.display = 'block';
+    $('scanMessage').textContent = 'Barcode ကို Camera ရှေ့မှာ ချိန်ပါ။';
+
+    await video.play();
+    scannerState.active = true;
+
+    async function scanFrame() {
+      if (!scannerState.active) return;
+
+      try {
+        const codes = await scannerState.detector.detect(video);
+
+        for (const code of codes) {
+          const match = code.rawValue.match(/\d{15}/);
+
+          if (match && validIMEI(match[0])) {
+            scannerState.target.value = match[0];
+            $('scanMessage').textContent = 'IMEI ဖတ်ပြီးပါပြီ။';
+            stopBarcodeScanner();
+            return;
+          }
+        }
+      } catch (error) {}
+
+      if (scannerState.active) {
+        setTimeout(scanFrame, 250);
+      }
+    }
+
+    scanFrame();
+
+  } catch (error) {
+    alert('Camera ဖွင့်မရပါ။ Camera Permission ကို ခွင့်ပြုပေးပါ။');
+    stopBarcodeScanner();
+  }
+}
+
+function stopBarcodeScanner() {
+  scannerState.active = false;
+
+  if (scannerState.stream) {
+    scannerState.stream.getTracks().forEach(track => track.stop());
+    scannerState.stream = null;
+  }
+
+  const video = $('barcodeVideo');
+  if (video) video.srcObject = null;
+
+  $('barcodeScanner').style.display = 'none';
+}
+
+$('scanImei1').addEventListener('click', () => {
+  startBarcodeScanner('imei1');
+});
+
+$('scanImei2').addEventListener('click', () => {
+  startBarcodeScanner('imei2');
+});
+
+$('stopScanner').addEventListener('click', stopBarcodeScanner);
+
 $('checkBtn').addEventListener('click',async()=>{
  const a=$('imei1').value.trim(),b=$('imei2').value.trim();
  if(!a&&!b){alert('IMEI တစ်ခု အနည်းဆုံး ထည့်ပါ');return;}
