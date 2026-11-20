@@ -108,37 +108,173 @@ app.get("/api/tac/:tac", async (req, res) => {
 });
 // Admin bulk import: send CSV as text/csv and Authorization: Bearer <TAC_IMPORT_TOKEN>.
 // Required header: tac,brand,model. Optional: device_type,source,verified
+
 app.post("/api/admin/import-csv", requireSameOrigin, requireAdmin, async (req, res) => {
-   if (typeof req.body !== "string" || !req.body.trim()) return res.status(400).json({ error: "Send CSV body with Content-Type: text/csv" });
+  if (typeof req.body !== "string" || !req.body.trim()) {
+    return res.status(400).json({
+      error: "Send CSV body with Content-Type: text/csv"
+    });
+  }
+
+  let client;
+
   try {
     const rows = parseCsv(req.body);
-    if (!rows.length) return res.status(400).json({ error: "No valid data rows" });
-    const client = await pool.connect(); let count = 0;
-    try {
-      await client.query("BEGIN");
-      for (const r of rows) {
-        await client.query(`INSERT INTO tac_records(tac,brand,model,device_type,source,verified,updated_at)
-          VALUES($1,$2,$3,$4,$5,$6,NOW())
-          ON CONFLICT(tac) DO UPDATE SET brand=EXCLUDED.brand, model=EXCLUDED.model,
-          device_type=EXCLUDED.device_type, source=EXCLUDED.source, verified=EXCLUDED.verified, updated_at=NOW()`,
-          [r.tac,r.brand,r.model,r.device_type,r.source,r.verified]);
-        count++;
+
+    if (!rows.length) {
+      return res.status(400).json({ error: "No valid data rows" });
+    }
+
+    const seen = new Set();
+
+    for (const row of rows) {
+      if (seen.has(row.tac)) {
+        return res.status(400).json({
+          error: "Duplicate TAC found in CSV"
+        });
       }
-      await client.query("COMMIT");
-    } catch (e) { await client.query("ROLLBACK"); throw e; } finally { client.release(); }
+      seen.add(row.tac);
+    }
+
+    client = await pool.connect();
+
+    await client.query("BEGIN");
+
+    let count = 0;
+
+    for (const r of rows) {
+      await client.query(
+        `INSERT INTO tac_records
+         (tac, brand, model, device_type, source, verified, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())
+         ON CONFLICT (tac) DO UPDATE SET
+           brand = EXCLUDED.brand,
+           model = EXCLUDED.model,
+           device_type = EXCLUDED.device_type,
+           source = EXCLUDED.source,
+           verified = EXCLUDED.verified,
+           updated_at = NOW()`,
+        [r.tac, r.brand, r.model, r.device_type, r.source, r.verified]
+      );
+
+      count++;
+    }
+
+    await client.query("COMMIT");
+
     res.json({ ok: true, imported: count });
-  } catch (e) { res.status(400).json({ error: e.message || "CSV import failed" }); }
+
+  } catch (error) {
+    if (client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {}
+    }
+
+    console.error("CSV import failed:", error.message);
+
+    res.status(500).json({
+      error: "CSV import failed. Check CSV format and try again."
+    });
+
+  } finally {
+    if (client) client.release();
+  }
 });
+
+
 function parseCsv(input) {
-  const lines = input.replace(/^\uFEFF/, "").split(/\r?\n/).filter(x => x.trim());
-  if (!lines.length) return [];
-  const parseLine = line => { let out=[], cur="", quoted=false; for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'&&line[i+1]==='"'&&quoted){cur+='"';i++;}else if(c==='"'){quoted=!quoted;}else if(c===','&&!quoted){out.push(cur.trim());cur='';}else cur+=c;}out.push(cur.trim());return out; };
-  const h=parseLine(lines[0]).map(x=>x.toLowerCase());
-  for (const key of ["tac","brand","model"]) if (!h.includes(key)) throw new Error("CSV header must include tac,brand,model");
-  const idx=k=>h.indexOf(k);
-  return lines.slice(1).map(parseLine).map(a=>({tac:(a[idx("tac")]||"").replace(/\D/g,""),brand:a[idx("brand")]||"",model:a[idx("model")]||"",device_type:a[idx("device_type")]||null,source:a[idx("source")]||"Imported CSV",verified:["true","1","yes"].includes((a[idx("verified")]||"").toLowerCase())}))
-    .filter(r=>/^\d{8}$/.test(r.tac)&&r.brand&&r.model);
+  const lines = input
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter(line => line.trim());
+
+  if (!lines.length) {
+    throw new Error("CSV file is empty");
+  }
+
+  function parseLine(line) {
+    const result = [];
+    let value = "";
+    let quoted = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+
+      if (c === '"') {
+        if (quoted && line[i + 1] === '"') {
+          value += '"';
+          i++;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (c === "," && !quoted) {
+        result.push(value.trim());
+        value = "";
+      } else {
+        value += c;
+      }
+    }
+
+    if (quoted) {
+      throw new Error("Invalid CSV quote");
+    }
+
+    result.push(value.trim());
+    return result;
+  }
+
+  const headers = parseLine(lines[0])
+    .map(value => value.toLowerCase());
+
+  for (const key of ["tac", "brand", "model"]) {
+    if (!headers.includes(key)) {
+      throw new Error("CSV header must include tac, brand, model");
+    }
+  }
+
+  if (new Set(headers).size !== headers.length) {
+    throw new Error("Duplicate CSV headers");
+  }
+
+  const index = key => headers.indexOf(key);
+
+  if (lines.length - 1 > 10000) {
+    throw new Error("Maximum 10000 CSV rows allowed");
+  }
+
+  return lines.slice(1).map((line, i) => {
+    const row = parseLine(line);
+
+    if (row.length !== headers.length) {
+      throw new Error(`Invalid columns at CSV row ${i + 2}`);
+    }
+
+    const tac = row[index("tac")] || "";
+    const brand = row[index("brand")] || "";
+    const model = row[index("model")] || "";
+
+    if (!/^\d{8}$/.test(tac)) {
+      throw new Error(`Invalid TAC at CSV row ${i + 2}`);
+    }
+
+    if (!brand || !model) {
+      throw new Error(`Missing brand or model at CSV row ${i + 2}`);
+    }
+
+    return {
+      tac,
+      brand,
+      model,
+      device_type: row[index("device_type")] || null,
+      source: row[index("source")] || "Imported CSV",
+      verified: ["true", "1", "yes"].includes(
+        (row[index("verified")] || "").toLowerCase()
+      )
+    };
+  });
 }
+
 
 
 // Check Admin Login Session
