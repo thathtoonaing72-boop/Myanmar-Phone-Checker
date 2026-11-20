@@ -507,10 +507,6 @@ fetch('/api/stats')
         if (el) el.textContent = 'Unavailable';
       });
   });
-  .catch(() => {
-    ['statRecords', 'statChecks', 'statToday', 'statVisitors']
-      .forEach(id => $(id).textContent = 'Unavailable');
-  });
 // Dark Mode Toggle
 const themeToggle = document.getElementById('themeToggle');
 
