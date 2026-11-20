@@ -252,6 +252,7 @@ function validIMEI(v){if(!/^\d{15}$/.test(v))return false;let s=0;for(let i=0;i<
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function lookup(tac){const r=await fetch(`/api/tac/${encodeURIComponent(tac)}`);if(!r.ok)throw new Error('API lookup failed');return r.json();}
 // Display IMEI Check History
+// Display IMEI Check History
 function renderHistory() {
   const box = document.getElementById('historyList');
   if (!box) return;
@@ -269,7 +270,7 @@ function renderHistory() {
     return;
   }
 
-  box.innerHTML = history.map(item => `
+  const makeCard = item => `
     <div class="device">
       <div class="rowline">
         <b>${esc(item.imei || '')}</b>
@@ -286,7 +287,18 @@ function renderHistory() {
         <span>${esc(item.date || '')}</span>
       </div>
     </div>
-  `).join('');
+  `;
+
+  box.innerHTML = makeCard(history[0]);
+
+  if (history.length > 1) {
+    box.innerHTML += `
+      <details class="history-details">
+        <summary>View All History (${history.length - 1})</summary>
+        ${history.slice(1).map(makeCard).join('')}
+      </details>
+    `;
+  }
 }
 // Clear IMEI Check History
 document.getElementById('clearHistory')?.addEventListener('click', () => {
