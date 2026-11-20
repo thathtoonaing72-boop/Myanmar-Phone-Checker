@@ -24,6 +24,12 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 <p class="note">IMEI ကို ကိုယ်ပိုင် သို့မဟုတ် ခွင့်ပြုချက်ရှိသော စက်ပစ္စည်းအတွက်သာ စစ်ဆေးပါ။ ဒီ website က IMEI အပြည့်အစုံကို server သို့ မပို့ဘဲ TAC 8 လုံးကိုသာ lookup လုပ်သည်။</p></section>
 <section class="card"><b>Supported brands</b><div class="brands" style="margin-top:12px"><span class="brand">Apple</span><span class="brand">Redmi</span><span class="brand">Xiaomi</span><span class="brand">POCO</span><span class="brand">Vivo</span><span class="brand">OPPO</span><span class="brand">Huawei</span><span class="brand">Realme</span></div></section>
 <section class="card result" id="result" aria-live="polite"><h3>IMEI Check Result</h3><div id="output"></div></section>
+<section class="card result" id="accountLockResult">
+  <h3>Account Lock Status</h3>
+  <div id="accountLockOutput">
+    <p>Account Lock: Not Checked</p>
+  </div>
+</section>
 <section class="card"><h3>Verification status</h3><p class="note">TAC lookup သည် Brand/Model ကိုသာ ခန့်မှန်းဖော်ပြနိုင်သည်။ Apple Activation Lock၊ Mi Account၊ Vivo/OPPO/Huawei/Realme account lock နှင့် CEIR blacklist/registration status တို့ကို IMEI တစ်ခုတည်းဖြင့် မအတည်ပြုနိုင်ပါ။ တရားဝင် API သို့မဟုတ် ခွင့်ပြုထားသော portal လိုအပ်သည်။</p>
 <div class="rowline"><span>Myanmar CEIR</span><a href="https://www.ceir.gov.mm/" target="_blank" rel="noopener">Official portal</a></div>
 <div class="rowline"><span>Apple Support</span><a href="https://support.apple.com/" target="_blank" rel="noopener">Official support</a></div>
@@ -53,11 +59,32 @@ async function deviceCard(v,i){
  <div class="rowline"><span>Verification</span><span class="tag">${data&&data.verified?'Verified':'Unverified / မစစ်ဆေးရသေး'}</span></div>
  <div class="rowline"><span>CEIR / Account</span><span class="tag">Official verification လိုအပ်</span></div></div>`;
 }
+async function loadAccountLock(){
+  const box = $('accountLockOutput');
+  $('accountLockResult').style.display = 'block';
+
+  try {
+    const r = await fetch('/api/account-lock/types');
+    if (!r.ok) throw new Error('API unavailable');
+
+    const data = await r.json();
+
+    box.innerHTML = data.brands.map(item => `
+      <div class="rowline">
+        <span>${esc(item.brand)} — ${esc(item.lockType)}</span>
+        <span class="tag">Not Checked</span>
+      </div>
+    `).join('');
+  } catch {
+    box.textContent = 'Account Lock API ချိတ်ဆက်မရပါ';
+  }
+}
 $('checkBtn').addEventListener('click',async()=>{
  const a=$('imei1').value.trim(),b=$('imei2').value.trim();
  if(!a&&!b){alert('IMEI တစ်ခု အနည်းဆုံး ထည့်ပါ');return;}
  $('checkBtn').disabled=true;$('output').textContent='စစ်ဆေးနေသည်...';$('result').style.display='block';
  try{$('output').innerHTML=(await Promise.all([a?deviceCard(a,0):'',b?deviceCard(b,1):''])).join('');}
+ await loadAccountLock();
  finally{$('checkBtn').disabled=false;}
 });
 $('clearBtn').addEventListener('click',()=>{$('imei1').value='';$('imei2').value='';$('output').innerHTML='';$('result').style.display='none';});
