@@ -56,6 +56,22 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
   font-size: 13px;
   color: #687386;
 }
+.site-footer {
+  text-align: center;
+  padding: 24px 12px;
+  margin-top: 30px;
+  color: #687386;
+  font-size: 13px;
+  border-top: 1px solid #dce1eb;
+}
+
+.site-footer p {
+  margin: 6px 0;
+}
+
+.site-footer strong {
+  color: #2864e8;
+}
 </style></head>
 <body><div class="container">
 <header class="header"><div class="logo">📱</div><h1>MYANMAR PHONE CHECKER</h1><div class="sub">ONLINE TAC DATABASE · DUAL IMEI CHECKER</div></header>
@@ -375,5 +391,10 @@ fetch('/api/stats')
       .forEach(id => $(id).textContent = 'Unavailable');
   });
  </script>
+<footer class="site-footer">
+  <p>© 2026 MYANMAR PHONE CHECKER</p>
+  <p>Developed & Maintained by <strong>Thet Htoo Naing</strong></p>
+  <p>All Rights Reserved.</p>
+</footer>
 </body>
 </html>
