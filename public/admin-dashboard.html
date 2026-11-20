@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 20px;
+  background: #101827;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+.container { max-width: 950px; margin: auto; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+section {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+input, button {
+  padding: 12px;
+  margin: 5px 0;
+  border-radius: 7px;
+  font-size: 15px;
+}
+input {
+  width: 100%;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: white;
+}
+button {
+  border: 0;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+.danger { background: #dc2626; }
+.secondary { background: #475569; }
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #475569;
+  text-align: left;
+}
+.table-wrap { overflow-x: auto; }
+#message { color: #93c5fd; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h2>MYANMAR PHONE CHECKER</h2>
+  <button class="danger" id="logout">LOGOUT</button>
+</header>
+
+<p id="message">Checking admin session...</p>
+
+<div id="dashboard" hidden>
+
+<section>
+<h3>Search TAC</h3>
+<input id="search" placeholder="Enter TAC, Brand or Model">
+<button id="searchBtn">SEARCH</button>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>TAC</th>
+<th>Brand</th>
+<th>Model</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="results"></tbody>
+</table>
+</div>
+</section>
+
+<section>
+<h3>Add / Edit TAC</h3>
+<form id="tacForm">
+<input id="tac" placeholder="8 Digit TAC" maxlength="8" required>
+<input id="brand" placeholder="Brand" required>
+<input id="model" placeholder="Model" required>
+<input id="deviceType" placeholder="Device Type (Optional)">
+<input id="source" placeholder="Source (Optional)">
+<button type="submit">SAVE TAC</button>
+<button type="button" class="secondary" id="clearForm">CLEAR</button>
+</form>
+</section>
+
+<section>
+<h3>CSV Import</h3>
+<input type="file" id="csvFile" accept=".csv,text/csv">
+<button id="importBtn">IMPORT CSV</button>
+<p>CSV columns: tac, brand, model, device_type, source, verified</p>
+</section>
+
+</div>
+</div>
+
+<script>
+const message = document.getElementById("message");
+const dashboard = document.getElementById("dashboard");
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401) {
+    window.location.href = "/admin.html";
+    throw new Error("Please login again");
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed");
+  }
+
+  return data;
+}
+
+async function checkSession() {
+  try {
+    const data = await api("/api/admin/me");
+    if (!data.isAdmin) {
+      window.location.href = "/admin.html";
+      return;
+    }
+    dashboard.hidden = false;
+    message.textContent = "Admin logged in";
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
+document.getElementById("logout").addEventListener("click", async () => {
+  try {
+    await api("/api/admin/logout", { method: "POST" });
+    window.location.href = "/admin.html";
+  } catch (error) {
+    message.textContent = error.message;
+  }
+});
+
+document.getElementById("searchBtn").addEventListener("click", async () => {
+  const q = document.getElementById("search").value.trim();
+  const tbody = document.getElementById("results");
+  tbody.replaceChildren();
+
+  try {
+    const data = await api("/api/admin/tac?q=" + encodeURIComponent(q));
+
+    data.records.forEach(record => {
+      const tr = document.createElement("tr");
+
+      [record.tac, record.brand, record.model].forEach(value => {
+        const td = document.createElement("td");
+        td.textContent = value || "";
+        tr.appendChild(td);
+      });
+
+      const action = document.createElement("td");
+
+      const edit = document.createElement("button");
+      edit.textContent = "EDIT";
+      edit.addEventListener("click", () => {
+        document.getElementById("tac").value = record.tac;
+        document.getElementById("brand").value = record.brand;
+        document.getElementById("model").value = record.model;
+        document.getElementById("deviceType").value = record.device_type || "";
+        document.getElementById("source").value = record.source || "";
+        window.scrollTo(0, 0);
+      });
+
+      const del = document.createElement("button");
+      del.textContent = "DELETE";
+      del.className = "danger";
+      del.addEventListener("click", async () => {
+        if (!confirm("Delete TAC " + record.tac + "?")) return;
+        try {
+          await api("/api/admin/tac/" + encodeURIComponent(record.tac), {
+            method: "DELETE"
+          });
+          message.textContent = "TAC deleted";
+          document.getElementById("searchBtn").click();
+        } catch (error) {
+          message.textContent = error.message;
+        }
+      });
+
+      action.append(edit, del);
+      tr.appendChild(action);
+      tbody.appendChild(tr);
+    });
+
+    message.textContent = data.records.length + " records found";
+  } catch (error) {
+    message.textContent = error.message;
+  }
+});
+
+document.getElementById("tacForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const tac = document.getElementById("tac").value.trim();
+  const payload = {
+    brand: document.getElementById("brand").value.trim(),
+    model: document.getElementById("model").value.trim(),
+    device_type: document.getElementById("deviceType").value.trim(),
+    source: document.getElementById("source").value.trim()
+  };
+
+  try {
+    const existing = await api("/api/admin/tac?q=" + encodeURIComponent(tac));
+    const found = existing.records.some(r => r.tac === tac);
+
+    const result = found
+      ? await api("/api/admin/tac/" + encodeURIComponent(tac), {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+      : await api("/api/admin/tac", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tac, ...payload })
+        });
+
+    message.textContent = found ? "TAC updated" : "TAC added";
+    document.getElementById("tacForm").reset();
+    document.getElementById("searchBtn").click();
+  } catch (error) {
+    message.textContent = error.message;
+  }
+});
+
+document.getElementById("clearForm").addEventListener("click", () => {
+  document.getElementById("tacForm").reset();
+});
+
+document.getElementById("importBtn").addEventListener("click", async () => {
+  const file = document.getElementById("csvFile").files[0];
+  if (!file) {
+    message.textContent = "Please select a CSV file";
+    return;
+  }
+
+  if (!confirm("Import this CSV file into the database?")) return;
+
+  try {
+    const csv = await file.text();
+    const result = await api("/api/admin/import-csv", {
+      method: "POST",
+      headers: { "Content-Type": "text/csv" },
+      body: csv
+    });
+    message.textContent = result.imported + " records imported";
+  } catch (error) {
+    message.textContent = error.message;
+  }
+});
+
+checkSession();
+</script>
+</body>
+</html>
