@@ -102,6 +102,47 @@ body.dark-mode .site-footer {
   color: var(--muted);
   border-color: var(--line);
 }
+
+/* Modern Blue Button Animation */
+button {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  box-shadow: 0 3px 8px rgba(40, 100, 232, 0.18);
+}
+
+button:hover {
+  box-shadow: 0 5px 16px rgba(40, 100, 232, 0.30);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: scale(0.94);
+  box-shadow: 0 1px 4px rgba(40, 100, 232, 0.20);
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(40, 100, 232, 0.35);
+  outline-offset: 3px;
+}
+
+/* Smooth animation for clickable links */
+a.checker-link {
+  transition: transform 0.18s ease, box-shadow 0.2s ease;
+}
+
+a.checker-link:active {
+  transform: scale(0.97);
+}
+
+/* Respect reduced motion settings */
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a.checker-link {
+    transition: none;
+  }
+}
 </style></head>
 <body><div class="container">
 <header class="header">
