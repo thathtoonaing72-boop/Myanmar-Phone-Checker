@@ -111,11 +111,20 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
   <div id="output"></div>
 </section>
 
+
 <section class="card" id="externalCheckers">
   <h3>Official & External IMEI Checkers</h3>
   <p>အောက်ပါ Website များတွင် IMEI ကို ဆက်လက်စစ်ဆေးနိုင်ပါသည်။</p>
 
   <div class="checker-grid">
+
+    <a class="checker-link"
+       href="https://www.imei.info/"
+       target="_blank" rel="noopener noreferrer">
+      <div class="checker-logo">IMEI.info</div>
+      <strong>IMEI Information</strong>
+      <span>Check Device Information</span>
+    </a>
 
     <a class="checker-link"
        href="https://iunlocker.com/check_imei_xiaomi"
@@ -308,7 +317,6 @@ $('clearBtn').addEventListener('click',()=>{
  $('imei2').value='';
  $('output').innerHTML='';
  $('result').style.display='none';
- $('accountLockResult').style.display='none';
 });
 
 fetch('/api/health')
