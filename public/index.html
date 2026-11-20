@@ -487,15 +487,26 @@ fetch('/api/health')
  .catch(()=>$('apiStatus').textContent='API မချိတ်ဆက်နိုင်ပါ။ Backend ကို deploy လုပ်ထားကြောင်း စစ်ဆေးပါ။');
 // Load Website Statistics
 fetch('/api/stats')
-  .then(r => r.json())
-  .then(d => {
-    if (!d.ok) return;
-
-    $('statRecords').textContent = d.records.toLocaleString();
-    $('statChecks').textContent = d.totalChecks.toLocaleString();
-    $('statToday').textContent = d.todayChecks.toLocaleString();
-    $('statVisitors').textContent = d.totalVisitors.toLocaleString();
+  .then(r => {
+    if (!r.ok) throw new Error('API error');
+    return r.json();
   })
+  .then(d => {
+    if (!d.ok) throw new Error('Stats unavailable');
+
+    $('statRecords').textContent = Number(d.records).toLocaleString();
+    $('statChecks').textContent = Number(d.totalChecks).toLocaleString();
+    $('statToday').textContent = Number(d.todayChecks).toLocaleString();
+    $('statVisitors').textContent = Number(d.totalVisitors).toLocaleString();
+  })
+  .catch(err => {
+    console.error('Statistics error:', err);
+    ['statRecords', 'statChecks', 'statToday', 'statVisitors']
+      .forEach(id => {
+        const el = $(id);
+        if (el) el.textContent = 'Unavailable';
+      });
+  });
   .catch(() => {
     ['statRecords', 'statChecks', 'statToday', 'statVisitors']
       .forEach(id => $(id).textContent = 'Unavailable');
