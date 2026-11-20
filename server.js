@@ -369,5 +369,18 @@ app.delete("/api/admin/tac/:tac", requireSameOrigin, requireAdmin, async (req, r
     res.status(500).json({ error: "Database error" });
   }
 });
+app.get("/api/account-lock/types", (_req, res) => {
+  res.json({
+    ok: true,
+    brands: [
+      { brand: "Apple", lockType: "Activation Lock", status: "not_checked" },
+      { brand: "Xiaomi", lockType: "Mi Account Lock", status: "not_checked" },
+      { brand: "OPPO", lockType: "OPPO Account Lock", status: "not_checked" },
+      { brand: "Vivo", lockType: "Vivo Account Lock", status: "not_checked" },
+      { brand: "Huawei", lockType: "Huawei ID Lock", status: "not_checked" },
+      { brand: "Realme", lockType: "Realme Account Lock", status: "not_checked" }
+    ]
+  });
+});
 app.get("*", (_req,res)=>res.sendFile(process.cwd()+"/public/index.html"));
 app.listen(port,()=>console.log(`Myanmar Phone Checker API listening on ${port}`));
