@@ -82,11 +82,37 @@ async function loadAccountLock(){
 $('checkBtn').addEventListener('click',async()=>{
  const a=$('imei1').value.trim(),b=$('imei2').value.trim();
  if(!a&&!b){alert('IMEI တစ်ခု အနည်းဆုံး ထည့်ပါ');return;}
- $('checkBtn').disabled=true;$('output').textContent='စစ်ဆေးနေသည်...';$('result').style.display='block';
- try{$('output').innerHTML=(await Promise.all([a?deviceCard(a,0):'',b?deviceCard(b,1):''])).join('');}
- await loadAccountLock();
- finally{$('checkBtn').disabled=false;}
+ $('checkBtn').disabled=true;
+ $('output').textContent='စစ်ဆေးနေသည်...';
+ $('result').style.display='block';
+
+ try {
+   $('output').innerHTML=(await Promise.all([
+     a?deviceCard(a,0):'',
+     b?deviceCard(b,1):''
+   ])).join('');
+
+   await loadAccountLock();
+
+ } catch(e) {
+   $('output').textContent='စစ်ဆေးမှု မအောင်မြင်ပါ။ ပြန်လည်ကြိုးစားပါ။';
+ } finally {
+   $('checkBtn').disabled=false;
+ }
 });
-$('clearBtn').addEventListener('click',()=>{$('imei1').value='';$('imei2').value='';$('output').innerHTML='';$('result').style.display='none';});
-fetch('/api/health').then(r=>r.json()).then(d=>$('apiStatus').textContent=`Online API connected · TAC records: ${d.records}`).catch(()=>$('apiStatus').textContent='API မချိတ်ဆက်နိုင်ပါ။ Backend ကို deploy လုပ်ထားကြောင်း စစ်ဆေးပါ။');
-</script></body></html>
+
+$('clearBtn').addEventListener('click',()=>{
+ $('imei1').value='';
+ $('imei2').value='';
+ $('output').innerHTML='';
+ $('result').style.display='none';
+ $('accountLockResult').style.display='none';
+});
+
+fetch('/api/health')
+ .then(r=>r.json())
+ .then(d=>$('apiStatus').textContent=`Online API connected · TAC records: ${d.records}`)
+ .catch(()=>$('apiStatus').textContent='API မချိတ်ဆက်နိုင်ပါ။ Backend ကို deploy လုပ်ထားကြောင်း စစ်ဆေးပါ။');
+ </script>
+</body>
+</html>
