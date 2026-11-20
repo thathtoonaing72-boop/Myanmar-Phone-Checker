@@ -67,7 +67,7 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 <section class="card"><b>Supported brands</b><div class="brands" style="margin-top:12px"><span class="brand">Apple</span><span class="brand">Redmi</span><span class="brand">Xiaomi</span><span class="brand">POCO</span><span class="brand">Vivo</span><span class="brand">OPPO</span><span class="brand">Huawei</span><span class="brand">Realme</span></div></section>
 <section class="card result" id="result" aria-live="polite"><h3>IMEI Check Result</h3><div id="output"></div></section>
 
-<section class="card result" id="externalCheckers">
+<section class="card" id="externalCheckers">
   <h3>Official & External IMEI Checkers</h3>
   <p>အောက်ပါ Website များတွင် IMEI ကို ဆက်လက်စစ်ဆေးနိုင်ပါသည်။</p>
 
@@ -161,8 +161,6 @@ $('checkBtn').addEventListener('click',async()=>{
      a?deviceCard(a,0):'',
      b?deviceCard(b,1):''
    ])).join('');
-
-   await loadAccountLock();
 
  } catch(e) {
    $('output').textContent='စစ်ဆေးမှု မအောင်မြင်ပါ။ ပြန်လည်ကြိုးစားပါ။';
