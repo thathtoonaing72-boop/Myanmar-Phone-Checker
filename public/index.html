@@ -72,9 +72,46 @@ button{padding:13px 16px;border:0;border-radius:10px;background:var(--blue);colo
 .site-footer strong {
   color: #2864e8;
 }
+/* Dark Mode */
+body.dark-mode {
+  --bg: #111827;
+  --card: #1f2937;
+  --ink: #f9fafb;
+  --muted: #9ca3af;
+  --line: #374151;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body.dark-mode .card,
+body.dark-mode .device {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background: #374151;
+  color: #fff;
+  border-color: #4b5563;
+}
+
+body.dark-mode .site-footer {
+  color: var(--muted);
+  border-color: var(--line);
+}
 </style></head>
 <body><div class="container">
-<header class="header"><div class="logo">📱</div><h1>MYANMAR PHONE CHECKER</h1><div class="sub">ONLINE TAC DATABASE · DUAL IMEI CHECKER</div></header>
+<header class="header">
+  <div class="logo">📱</div>
+  <h1>MYANMAR PHONE CHECKER</h1>
+  <div class="sub">ONLINE TAC DATABASE · DUAL IMEI CHECKER</div>
+  <button type="button" id="themeToggle" class="theme-toggle">
+    🌙 Dark Mode
+  </button>
+</header>
 
 <section class="card">
   <h3>IMEI Information Checker</h3>
@@ -390,10 +427,27 @@ fetch('/api/stats')
     ['statRecords', 'statChecks', 'statToday', 'statVisitors']
       .forEach(id => $(id).textContent = 'Unavailable');
   });
+// Dark Mode Toggle
+const themeToggle = document.getElementById('themeToggle');
+
+if (localStorage.getItem('mpc_theme') === 'dark') {
+  document.body.classList.add('dark-mode');
+  themeToggle.textContent = '☀️ Light Mode';
+}
+
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+
+  const isDark = document.body.classList.contains('dark-mode');
+
+  localStorage.setItem('mpc_theme', isDark ? 'dark' : 'light');
+
+  themeToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+});
  </script>
 <footer class="site-footer">
   <p>© 2026 MYANMAR PHONE CHECKER</p>
-  <p>Developed & Maintained by <strong>Thet Htoo Naing Official</strong></p>
+  <p>Developed & Maintained by <strong>Thet Htoo Naing</strong></p>
   <p>All Rights Reserved.</p>
 </footer>
 </body>
