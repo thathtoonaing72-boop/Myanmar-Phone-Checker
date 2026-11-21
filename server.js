@@ -392,6 +392,7 @@ app.post("/api/admin/tac", requireSameOrigin, requireAdmin, async (req, res) => 
   }
 });
 
+
 // Admin: Update a TAC record
 app.put("/api/admin/tac/:tac", requireSameOrigin, requireAdmin, async (req, res) => {
   const tac = req.params.tac;
@@ -400,17 +401,29 @@ app.put("/api/admin/tac/:tac", requireSameOrigin, requireAdmin, async (req, res)
   if (!/^\d{8}$/.test(tac) ||
       !String(brand || "").trim() ||
       !String(model || "").trim()) {
-    return res.status(400).json({ error: "Valid TAC, brand and model required" });
+    return res.status(400).json({
+      error: "Valid TAC, brand and model required"
+    });
   }
 
   try {
     const q = await pool.query(
       `UPDATE tac_records
-       SET brand=$2, model=$3, device_type=$4, source=$5, updated_at=NOW()
+       SET brand=$2,
+           model=$3,
+           device_type=$4,
+           source=$5,
+           updated_at=NOW()
        WHERE tac=$1`,
-      [tac, brand.trim(), model.trim(), device_type || null,
-       source || "Admin edit"]
+      [
+        tac,
+        brand.trim(),
+        model.trim(),
+        device_type || null,
+        source || "Admin edit"
+      ]
     );
+
     res.json({ ok: true, updated: q.rowCount });
   } catch {
     res.status(500).json({ error: "Database error" });

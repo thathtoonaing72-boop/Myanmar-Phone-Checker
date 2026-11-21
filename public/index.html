@@ -253,7 +253,7 @@ a.checker-link:active {
   </div>
 </section>
 
-<section class="card"><h3>Verification status</h3><p class="note">TAC lookup သည် Brand/Model ကိုသာ ခန့်မှန်းဖော်ပြနိုင်သည်။ Apple Activation Lock၊ Mi Account၊ Vivo/OPPO/Huawei/Realme account lock နှင့် CEIR blacklist/registration status တို့ကို IMEI တစ်ခုတည်းဖြင့် မအတည်ပြုနိုင်ပါ။ တရားဝင် API သို့မဟုတ် ခွင့်ပြုထားသော portal လိုအပ်သည်။</p>
+<section class="card">
 <div class="rowline"><span>Myanmar CEIR</span><a href="https://www.ceir.gov.mm/" target="_blank" rel="noopener">Official portal</a></div>
 <div class="rowline"><span>Apple Support</span><a href="https://support.apple.com/" target="_blank" rel="noopener">Official support</a></div>
 <div class="rowline"><span>Xiaomi Support</span><a href="https://www.mi.com/global/support/" target="_blank" rel="noopener">Official support</a></div>
@@ -386,8 +386,6 @@ try {
  <div class="rowline"><span>Brand</span><b>${data?esc(data.brand):err||'Database မတွေ့ပါ'}</b></div>
  <div class="rowline"><span>Model</span><b>${data?esc(data.model):'TAC database ထဲတွင် မရှိသေးပါ'}</b></div>
  <div class="rowline"><span>Data source</span><span>${data?esc(data.source||'Not specified'):'မရရှိသေးပါ'}</span></div>
- <div class="rowline"><span>Verification</span><span class="tag">${data&&data.verified?'Verified':'Unverified / မစစ်ဆေးရသေး'}</span></div>
- <div class="rowline"><span>CEIR / Account</span><span class="tag">Official verification လိုအပ်</span></div></div>`;
 }
 async function loadAccountLock(){
   const box = $('accountLockOutput');
