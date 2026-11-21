@@ -379,13 +379,14 @@ try {
   );
   renderHistory();
 } catch (e) {}
- return `<div class="device"><h4>IMEI ${i+1}</h4>
+return `<div class="device"><h4>IMEI ${i+1}</h4>
  <div class="rowline"><span>IMEI</span><b>${esc(v)}</b></div>
  <div class="rowline"><span>Checksum</span><span class="${ok?'ok':'bad'}">${ok?'✓ Valid':'✗ Invalid'}</span></div>
  <div class="rowline"><span>TAC</span><b>${tac||'မမှန်ပါ'}</b></div>
  <div class="rowline"><span>Brand</span><b>${data?esc(data.brand):err||'Database မတွေ့ပါ'}</b></div>
  <div class="rowline"><span>Model</span><b>${data?esc(data.model):'TAC database ထဲတွင် မရှိသေးပါ'}</b></div>
  <div class="rowline"><span>Data source</span><span>${data?esc(data.source||'Not specified'):'မရရှိသေးပါ'}</span></div>
+</div>`;
 }
 async function loadAccountLock(){
   const box = $('accountLockOutput');
